@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weka 關聯規則探勘互動指南 (增強互動版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .tab-button {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #0ea5e9; /* sky-600 */
+            color: white;
+            border-bottom: 2px solid #0284c7; /* sky-700 */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-button.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        th, td {
+            border: 1px solid #e2e8f0; /* slate-200 */
+            padding: 0.75rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f8fafc; /* slate-50 */
+            font-weight: 600;
+        }
+        h1, h2, h3, h4 {
+             font-family: 'Noto Sans TC', 'Inter', sans-serif;
+        }
+        .prose {
+            max-width: none;
+        }
+        .interactive-step, .dynamic-step {
+            border-left: 3px solid #38bdf8; /* sky-400 */
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+            background-color: #f0f9ff; /* sky-50 */
+            padding: 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        .code-block {
+            background-color: #e2e8f0; /* slate-200 */
+            padding: 0.75rem 1rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #cbd5e1; /* slate-300 */
+        }
+        .highlight {
+            background-color: #fef9c3; /* yellow-100 */
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.2rem;
+        }
+        /* Custom styles for input fields in interactive example */
+        .input-label {
+            font-weight: 500;
+            color: #334155; /* slate-700 */
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            margin-bottom: 0.75rem;
+            box-shadow: inset 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        .input-field:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            border-color: #38bdf8; /* sky-500 */
+            box-shadow: 0 0 0 3px rgb(56 189 248 / 0.5);
+        }
+        .action-button {
+            background-color: #0ea5e9; /* sky-600 */
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        .action-button:hover {
+            background-color: #0284c7; /* sky-700 */
+        }
+        #analysisOutput div {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-sky-700 mb-3">Weka 關聯規則探勘互動指南</h1>
+            <p class="text-lg text-slate-600">深入解析 Weka 如何執行關聯規則分析，包含互動範例與詳細說明</p>
+        </header>
+
+        <div id="tab-nav" class="mb-6 bg-white shadow-md rounded-lg p-2 flex flex-wrap justify-center gap-2">
+            <button class="tab-button py-2 px-4 rounded-md font-medium text-slate-700 hover:bg-sky-100" data-tab="introduction">總覽</button>
+            <button class="tab-button py-2 px-4 rounded-md font-medium text-slate-700 hover:bg-sky-100" data-tab="algorithms">核心演算法</button>
+            <button class="tab-button py-2 px-4 rounded-md font-medium text-slate-700 hover:bg-sky-100" data-tab="preprocessing">資料前處理</button>
+            <button class="tab-button py-2 px-4 rounded-md font-medium text-slate-700 hover:bg-sky-100" data-tab="results">結果與詮釋</button>
+            <button class="tab-button py-2 px-4 rounded-md font-medium text-slate-700 hover:bg-sky-100" data-tab="interactive_example">互動範例</button>
+            <button class="tab-button py-2 px-4 rounded-md font-medium text-slate-700 hover:bg-sky-100" data-tab="advanced">進階與考量</button>
+            <button class="tab-button py-2 px-4 rounded-md font-medium text-slate-700 hover:bg-sky-100" data-tab="conclusion">結論</button>
+        </div>
+
+        <div id="tab-content-area" class="prose">
+            <div id="tab-introduction" class="tab-content p-6 bg-white rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-sky-600 mb-4 border-b pb-2">Weka 與關聯規則概覽</h2>
+                <p>Weka (Waikato Environment for Knowledge Analysis) 是一款由紐西蘭懷卡托大學開發的開源軟體，廣泛應用於資料探勘與機器學習。關聯規則探勘是其核心功能之一，旨在從大型資料集中發現項目之間有趣的關聯性與模式。</p>
+                <p>關聯規則分析的目標是識別資料庫中經常一起出現的項目或事件之間的模式，通常以「若 X 則 Y」的形式表達，其中 X 稱為前項 (antecedent)，Y 稱為後項 (consequent)。例如，「購買<span class='highlight'>啤酒</span>的顧客也傾向於購買<span class='highlight'>尿布</span>」。此類分析對於零售業的購物籃分析、產品推薦、醫療診斷及金融詐欺偵測等多個領域均具有重要價值。</p>
+                <p>Weka 提供圖形化使用者介面 (Weka Explorer)，使用者可透過其「Associate」標籤頁執行關聯規則探勘。同時也支援命令列介面 (CLI) 或 Java API 操作，為進階使用者提供了更大的彈性。</p>
+            </div>
+
+            <div id="tab-algorithms" class="tab-content p-6 bg-white rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-sky-600 mb-4 border-b pb-2">核心關聯規則演算法</h2>
+                <p>Weka 主要內建了兩種廣為人知的關聯規則演算法：Apriori 和 FP-Growth。這些演算法的目標是有效地從大量交易數據中找出頻繁出現的項目集，並從這些項目集中生成有趣的關聯規則。</p>
+                
+                <div class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                    <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">Apriori 演算法</h3>
+                        <svg class="accordion-icon w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-4 text-slate-700 space-y-3">
+                        <p>Apriori 是經典的關聯規則探勘方法，核心思想是「一個項目集若為頻繁的，則其所有子集也必須是頻繁的」（Apriori 原理）。它透過逐層搜尋 (level-wise search) 找出頻繁項目集：</p>
+                        <ol class="list-decimal list-inside ml-4">
+                            <li>找出所有頻繁的單個項目 (1-itemsets)。</li>
+                            <li>利用頻繁的 k-itemsets 生成候選的 (k+1)-itemsets。</li>
+                            <li>掃描資料庫計算候選 (k+1)-itemsets 的支持度，篩選出頻繁的 (k+1)-itemsets。</li>
+                            <li>重複步驟 2 和 3，直到無法再找到更長的頻繁項目集。</li>
+                        </ol>
+                        <p>Weka 的 Apriori 實作有一個特性：它會從一個較高的最小支持度 (`upperBoundMinSupport`) 開始，逐步以 `delta` 的幅度降低支持度，直到找到指定數量 (`numRules`) 的規則，或者支持度達到預設的下限 (`lowerBoundMinSupport`)。這種策略有助於在未知合適支持度閾值時進行探索性分析。</p>
+                        
+                        <h4 class="text-lg font-semibold mt-4 mb-2 text-sky-700">主要參數 (Apriori)：</h4>
+                        <div class="overflow-x-auto">
+                            <table>
+                                <thead>
+                                    <tr><th>參數名稱</th><th>描述</th><th>預設值</th><th>備註</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>car</code></td><td>是否探勘類別關聯規則 (CARs)。若為 true，後項被限制為指定的類別屬性。</td><td>False</td><td>需搭配 <code>classIndex</code>。</td></tr>
+                                    <tr><td><code>classIndex</code></td><td>類別屬性的索引 (從 1 開始)。僅在 `car` 為 true 時生效。</td><td>-1 (無)</td><td></td></tr>
+                                    <tr><td><code>delta</code></td><td>每次迭代中最小支持度降低的量。</td><td>0.05</td><td>控制支持度下降速度。</td></tr>
+                                    <tr><td><code>lowerBoundMinSupport</code></td><td>最小支持度的下限。</td><td>0.1</td><td>演算法停止的條件之一。</td></tr>
+                                    <tr><td><code>metricType</code></td><td>排序規則的評估指標 (Confidence, Lift, Leverage, Conviction)。</td><td>Confidence</td><td>決定規則的排序方式。</td></tr>
+                                    <tr><td><code>minMetric</code></td><td>所選評估指標的最小閾值。</td><td>0.9</td><td>例如，信賴度至少為 0.9。</td></tr>
+                                    <tr><td><code>numRules</code></td><td>要尋找的最佳規則數量。</td><td>10</td><td>演算法停止的條件之一。</td></tr>
+                                    <tr><td><code>outputItemSets</code></td><td>是否同時輸出頻繁項目集。</td><td>False</td><td>有助於理解中間過程。</td></tr>
+                                    <tr><td><code>removeAllMissingCols</code></td><td>是否移除所有值均為遺失的欄位（屬性）。</td><td>False</td><td>資料清理選項。</td></tr>
+                                    <tr><td><code>significanceLevel</code></td><td>信賴區間的顯著性水準。若使用 (-1.0以外的值)，則會對規則進行顯著性檢定，速度較慢。</td><td>-1.0 (不檢定)</td><td>統計檢定。</td></tr>
+                                    <tr><td><code>upperBoundMinSupport</code></td><td>最小支持度的上限。</td><td>1.0</td><td>迭代開始時的支持度。</td></tr>
+                                    <tr><td><code>treatZeroAsMissing</code></td><td>是否將名目屬性的第一個值（通常代表 0 或 false）視為遺失值處理。</td><td>False</td><td>針對特定資料編碼。</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="font-semibold">類別關聯規則 (CARs):</p>
+                        <p>Apriori 支援探勘 CARs，這類規則的後項固定為預先定義的類別屬性。這使得關聯規則能用於分類任務，提供一種基於規則的預測方法。</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                    <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">FP-Growth 演算法</h3>
+                        <svg class="accordion-icon w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-4 text-slate-700 space-y-3">
+                        <p>FP-Growth (Frequent Pattern Growth) 旨在克服 Apriori 的性能瓶頸，尤其在處理大型資料集時。它避免了 Apriori 中成本高昂的候選項目集生成過程，通常只需掃描資料庫兩次。</p>
+                        <p>工作流程：</p>
+                        <ol class="list-decimal list-inside ml-4">
+                            <li><strong>建構 FP-Tree (Frequent Pattern Tree):</strong> 掃描資料庫一次計算項目支持度，移除不頻繁項目。第二次掃描時，將每筆交易中的頻繁項目按支持度降序排列後插入 FP-Tree。FP-Tree 是一個壓縮的樹狀結構，有效保留項目共現資訊。</li>
+                            <li><strong>從 FP-Tree 中探勘頻繁項目集:</strong> 採用分治策略，遞迴地為每個頻繁項目建構其條件模式基 (conditional pattern base) 和條件 FP-Tree (conditional FP-Tree)，然後在這些較小的樹上探勘。</li>
+                        </ol>
+                        <p class="font-semibold mt-2">資料要求：<span class="text-red-600">輸入屬性必須是二元類型 (binary)。</span></p>
+                        <p>若資料含名目或數值屬性，需使用濾鏡轉換（詳見「資料前處理」分頁）：<code>NominalToBinary</code>、<code>NumericToBinary</code>。轉換時需將類別屬性設為「無類別」。</p>
+                        
+                        <h4 class="text-lg font-semibold mt-4 mb-2 text-sky-700">主要參數 (FP-Growth)：</h4>
+                        <div class="overflow-x-auto">
+                             <table>
+                                <thead>
+                                    <tr><th>參數名稱</th><th>描述</th><th>預設值</th><th>備註</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>positiveIndex</code></td><td>對於二元屬性，指定哪個值的索引被視為「正向」(positive)。對於稀疏實例，總是使用索引 2。</td><td>2</td><td>影響二元屬性解釋。</td></tr>
+                                    <tr><td><code>maxNumberOfItems</code></td><td>大型項目集（以及規則）中允許包含的最大項目數量。-1 表示無限制。</td><td>-1</td><td>控制規則複雜度。</td></tr>
+                                    <tr><td><code>numRulesToFind</code></td><td>期望找到的規則數量。</td><td>10</td><td></td></tr>
+                                    <tr><td><code>metricType</code></td><td>排序規則的評估指標 (0=Confidence, 1=Lift, 2=Leverage, 3=Conviction)。</td><td>Confidence (0)</td><td></td></tr>
+                                    <tr><td><code>minMetric</code></td><td>所選評估指標的最小閾值。</td><td>0.9</td><td></td></tr>
+                                    <tr><td><code>upperBoundMinSupport</code></td><td>最小支持度的上限。</td><td>1.0</td><td></td></tr>
+                                    <tr><td><code>lowerBoundMinSupport</code></td><td>最小支持度的下限。</td><td>0.1</td><td></td></tr>
+                                    <tr><td><code>delta</code></td><td>最小支持度降低的量。</td><td>0.05</td><td></td></tr>
+                                    <tr><td><code>findAllRulesForSupportLevel</code></td><td>是否找到所有滿足最小支持度和評估指標的規則。啟用此模式將禁用迭代降低支持度。</td><td>False</td><td>設為 true 時，使用 `lowerBoundMinSupport`。</td></tr>
+                                    <tr><td><code>transactionsMustContain</code></td><td>逗號分隔的項目列表。僅考慮包含所有這些項目的交易。</td><td>(空)</td><td>過濾交易。</td></tr>
+                                    <tr><td><code>rulesMustContain</code></td><td>逗號分隔的項目列表。僅輸出包含所有這些項目的規則。</td><td>(空)</td><td>過濾規則，可模擬對特定後項的關注。</td></tr>
+                                    <tr><td><code>useORForMustContainList</code></td><td>在 `transactionsMustContain` 和 `rulesMustContain` 中使用 OR 邏輯而非 AND。</td><td>False</td><td>改變過濾邏輯。</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                         <p class="font-semibold">FP-Growth 與類別關聯規則:</p>
+                        <p>Weka 的 FP-Growth 實作沒有直接的 `classIndex` 參數來探勘 CARs。但可透過 `rulesMustContain` 參數，指定規則必須包含代表類別標籤的特定項目，間接達到類似效果。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-preprocessing" class="tab-content p-6 bg-white rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-sky-600 mb-4 border-b pb-2">資料前處理</h2>
+                <p>資料前處理是關聯規則分析的關鍵步驟，確保資料品質與適用性。Weka 在「Preprocess」標籤頁提供多種工具。</p>
+
+                <div class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                    <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">處理遺失值</h3>
+                        <svg class="accordion-icon w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-4 text-slate-700 space-y-3">
+                        <p>實際資料常有遺失值 ('?')，需妥善處理：</p>
+                        <ul class="list-disc list-inside ml-4 space-y-2">
+                            <li><strong>標記遺失值：</strong> <code>NumericalCleaner</code> 濾鏡可將特定數值（如 0）標記為標準遺失值。</li>
+                            <li><strong>移除實例/屬性：</strong>
+                                <ul class="list-circle list-inside ml-6">
+                                    <li><code>RemoveWithValues</code>：移除在指定屬性上有遺失值的實例。</li>
+                                    <li>Apriori 的 <code>removeAllMissingCols</code>：移除全為遺失值的屬性。</li>
+                                    <li>Apriori 的 <code>treatZeroAsMissing</code>：將名目屬性第一個值視為遺失。</li>
+                                </ul>
+                            </li>
+                            <li><strong>填補遺失值 (Imputation)：</strong>
+                                <ul class="list-circle list-inside ml-6">
+                                    <li><code>ReplaceMissingValues</code>：用平均值（數值）或眾數（名目）填補。</li>
+                                    <li><code>ReplaceMissingWithUserConstant</code>：用自訂常數填補（如新名目值 "missing"）。這對於後續將「遺失」本身作為一個可分析類別很有用。</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p>在購物籃分析等情境，大部分項目在單筆交易中是「未購買」狀態，這類似於遺失。Apriori 通常只考慮項目存在的交易來計算支持度。</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                    <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">屬性類型轉換</h3>
+                        <svg class="accordion-icon w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-4 text-slate-700 space-y-3">
+                        <p class="font-semibold">FP-Growth 要求二元屬性：</p>
+                        <ul class="list-disc list-inside ml-4 space-y-2">
+                            <li><strong><code>NominalToBinary</code>：</strong> 名目屬性轉為多個二元屬性。每個二元屬性對應原始名目屬性的一個值。
+                                <br>例如：屬性「顏色」有 {紅, 藍, 綠}，轉換後變為「顏色=紅」(true/false)，「顏色=藍」(true/false)，「顏色=綠」(true/false)。
+                                <br>若原始名目值為遺失 ('?'), 轉換後的二元屬性通常全為 0 或也標記為遺失。若想將遺失視為一個類別，需先用 <code>ReplaceMissingWithUserConstant</code> 將 '?' 轉為特定名目值 (如 "Unknown") 再二元化。
+                            </li>
+                            <li><strong><code>NumericToBinary</code>：</strong> 數值屬性轉為二元屬性。
+                                <ul class="list-circle list-inside ml-6">
+                                    <li>若原始數值為 0，新二元屬性值為 0。</li>
+                                    <li>若原始數值為遺失 ('?'), 新二元屬性值也為遺失 ('?')。</li>
+                                    <li>其他非零數值通常轉為 1（或 true）。</li>
+                                </ul>
+                            </li>
+                            <li><strong><code>Discretize</code>：</strong> 連續數值屬性離散化為名目區間 (bins)。這對 Apriori 也很有用，例如將「年齡」轉為「青年」、「中年」、「老年」。</li>
+                        </ul>
+                        <p>轉換時，通常需將資料集的類別屬性設為「無類別」(No Class)。這些轉換可能影響資訊或語義，需謹慎評估。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-results" class="tab-content p-6 bg-white rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-sky-600 mb-4 border-b pb-2">結果呈現與詮釋</h2>
+                <p>結果顯示於 Weka Explorer「Associate」標籤頁的輸出面板。</p>
+                
+                <div class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                     <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">輸出內容</h3>
+                        <svg class="accordion-icon w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-4 text-slate-700 space-y-3">
+                        <ul class="list-disc list-inside ml-4 space-y-1">
+                            <li><strong>運行資訊：</strong> 使用的演算法、資料集、參數設定等。</li>
+                            <li><strong>演算法特定資訊：</strong> 如 Apriori 的週期數、生成的頻繁項目集 (L(1), L(2)...)。</li>
+                            <li><strong>找到的規則 (Best rules found)：</strong> 按所選評估指標排序。</li>
+                        </ul>
+                        <p class="mt-2">規則格式範例： <code>antecedent itemset count ==> consequent itemset count conf:(confidence_value) lift:(lift_value) lev:(leverage_value) conv:(conviction_value)</code></p>
+                        <p>例如：<code>total=high MTA=high magazines=yes 45 ==> bread and cake=yes 40 conf:(0.91) lift:(1.2) lev:(0.03) conv:(1.1)</code></p>
+                        <p>這表示：在45個「total=high, MTA=high, magazines=yes」的交易中，有40個也包含「bread and cake=yes」。信賴度為0.91。其他指標提供了更多關於規則強度和趣味性的資訊。</p>
+                    </div>
+                </div>
+
+                <div id="metrics" class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                    <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">核心評估指標</h3>
+                        <svg class="accordion-icon w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-3 text-slate-600 space-y-3">
+                        <p>Weka 支援多種評估指標衡量規則的強度和趣味性：</p>
+                        <div class="overflow-x-auto">
+                            <table>
+                                <thead>
+                                    <tr><th>指標名稱</th><th>計算公式 (X→Y)</th><th>意義與詮釋</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>支持度 (Support)</strong></td><td>\(P(X \cup Y)\)</td><td>項目集 (X 和 Y 一起) 在資料集中的頻繁程度。高支持度表示共現普遍。是演算法篩選規則的基礎。</td></tr>
+                                    <tr><td><strong>信賴度 (Confidence)</strong></td><td>\(P(Y \mid X) = \frac{P(X \cup Y)}{P(X)}\)</td><td>規則的可靠性：「若 X 出現，Y 出現的可能性有多大？」高信賴度表明強烈的蘊涵關係。但可能受 Y 普遍性影響。</td></tr>
+                                    <tr><td><strong>提升度 (Lift)</strong></td><td>\(\frac{P(Y \mid X)}{P(Y)} = \frac{P(X \cup Y)}{P(X)P(Y)}\)</td><td>衡量 X 出現時 Y 出現的概率，相對於 Y 單獨出現的概率提升了多少。Lift > 1：正相關；Lift < 1：負相關；Lift = 1：獨立。能排除因 Y 普遍而導致的高信賴度假象。</td></tr>
+                                    <tr><td><strong>槓桿率 (Leverage)</strong></td><td>\(P(X \cup Y) - P(X)P(Y)\)</td><td>衡量 X 和 Y 一起出現的觀察頻率與假設 X 和 Y 獨立時的期望頻率之間的差異。正值表示一起出現頻率高於偶然。值域通常為 [-0.25, 0.25]。</td></tr>
+                                    <tr><td><strong>確信度 (Conviction)</strong></td><td>\(\frac{P(X)P(\neg Y)}{P(X \cup \neg Y)} = \frac{1 - P(Y)}{1 - Conf(X \Rightarrow Y)}\) (若 \(Conf < 1\))</td><td>衡量規則 \(X \Rightarrow Y\) 出錯的頻率。可以看作是 X 出現但 Y 未出現的概率與預期（如果 X 和 Y 獨立）的 X 出現但 Y 未出現的概率之比。值越高，表示 X 和 Y 的關聯越強，越不可能是偶然。對信賴度為1的規則，確信度為無窮大。</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p>使用者可選擇 <code>metricType</code> (Confidence, Lift, Leverage, Conviction) 對規則排序。Weka 的 Apriori 輸出通常會顯示所有這些指標。FP-Growth 也可以按這些指標排序，但 GUI 預設輸出中是否完整顯示所有指標可能略有不同。沒有單一指標能完美定義「好」規則，需綜合領域知識解釋。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-interactive_example" class="tab-content p-6 bg-white rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-sky-600 mb-4 border-b pb-2">互動式 Apriori 演算法模擬器</h2>
+                <p>此模擬器讓您可以輸入自己的交易資料和參數，逐步觀察 Apriori 演算法如何找出頻繁項目集並生成關聯規則。</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <label for="transactionsInput" class="input-label">輸入交易資料 (每行一筆交易，項目以逗號分隔):</label>
+                        <textarea id="transactionsInput" class="input-field h-40" placeholder="例如：&#10;牛奶,麵包,雞蛋&#10;麵包,尿布&#10;牛奶,尿布,啤酒,雞蛋&#10;牛奶,麵包,尿布,啤酒">牛奶,麵包,雞蛋
+麵包,尿布
+牛奶,尿布,啤酒,雞蛋
+牛奶,麵包,尿布,啤酒</textarea>
+                    </div>
+                    <div>
+                        <label for="minSupportInput" class="input-label">最小支持度 (MinSupport) (%):</label>
+                        <input type="number" id="minSupportInput" class="input-field" value="50" min="1" max="100">
+                        
+                        <label for="minConfidenceInput" class="input-label mt-4">最小信賴度 (MinConfidence) (%):</label>
+                        <input type="number" id="minConfidenceInput" class="input-field" value="60" min="1" max="100">
+                    </div>
+                </div>
+
+                <button id="startAnalysisButton" class="action-button mt-4 mb-6">開始分析</button>
+                
+                <div id="analysisOutput" class="space-y-4">
+                    </div>
+            </div>
+
+            <div id="tab-advanced" class="tab-content p-6 bg-white rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-sky-600 mb-4 border-b pb-2">進階方面與操作考量</h2>
+                
+                <div class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                    <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">多層次關聯規則與相關性分析</h3>
+                        <svg class="accordion-icon w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-4 text-slate-700 space-y-3">
+                        <ul class="list-disc list-inside ml-4 space-y-2">
+                            <li><strong>多層次關聯規則 (Multi-Level Association Rules)：</strong> Weka 支援使用概念階層 (concept hierarchies) 探勘規則。當低粒度項目不夠頻繁時，其在概念階層中較高層次的概念可能足夠頻繁。例如，若「蘋果汁」和「柳橙汁」不頻繁，但其上層概念「果汁」可能與其他項目形成頻繁模式。探勘方法可對所有層級使用統一支持度，或在較低層級使用降低的最小支持度。</li>
+                            <li><strong>相關性分析 (Correlation Analysis)：</strong> 使用提升度 (Lift)、槓桿率 (Leverage) 等指標判斷項目間是真實相關還是偶然共現。Lift > 1 表示正相關，有助於過濾掉誤導性規則。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                    <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">可擴展性、性能及大型資料集的限制</h3>
+                        <svg class="accordion-icon w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-4 text-slate-700 space-y-3">
+                        <ul class="list-disc list-inside ml-4 space-y-2">
+                            <li><strong>記憶體限制：</strong> Weka 通常將資料載入記憶體，對超大型資料集是瓶頸，可能導致「記憶體不足」錯誤。</li>
+                            <li><strong>演算法性能：</strong>
+                                <ul class="list-circle list-inside ml-6">
+                                    <li>Apriori 因多次掃描和大量候選集生成，對大型資料集較慢。</li>
+                                    <li>FP-Growth 通常更有效率，但 Weka 實作在極端情況下仍可能受記憶體和預設參數（如 `delta`）影響，且可能不如專用函式庫優化。</li>
+                                </ul>
+                            </li>
+                            <li><strong>應對方法：</strong> 資料子抽樣、分區處理、仔細調整參數 (特別是支持度)。在 Weka 內，FP-Growth 是處理較大資料集的較佳選擇。</li>
+                            <li>進階分析（如多層次規則）的實用性可能因平台可擴展性而受限於較小或抽樣資料集。</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="mt-6 p-4 bg-sky-50 rounded-md shadow">
+                    <button class="accordion-button w-full text-left flex justify-between items-center py-3 px-4 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors duration-200">
+                        <h3 class="text-xl font-semibold">序列模式探勘</h3>
+                        <svg class="accordion-icon w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content mt-4 text-slate-700 space-y-3">
+                        <p>Weka 透過 <code>GeneralizedSequentialPatterns</code> (GSP) 類別支援序列模式探勘，用於發現考慮項目出現順序的模式 (例如，顧客先買 A，後買 B)。GSP 有其自身參數，如 `dataSeqID` 和 `minSupport`。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-conclusion" class="tab-content p-6 bg-white rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-sky-600 mb-4 border-b pb-2">結論與最佳實踐</h2>
+                <p>Weka 為關聯規則探勘提供易用平台，內建 Apriori 和 FP-Growth，並提供豐富評估指標。Apriori 支援類別關聯規則。</p>
+                
+                <h3 class="text-xl font-semibold mt-4 mb-2 text-sky-700">主要優勢：</h3>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><strong>易用性：</strong> GUI 適合學習和初步探索。</li>
+                    <li><strong>整合性：</strong> 單一環境中集成前處理與建模。</li>
+                    <li><strong>豐富評估指標：</strong> 助於深入評估規則。</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-4 mb-2 text-sky-700">考量因素與限制：</h3>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><strong>可擴展性：</strong> 記憶體中處理機制對大型資料集是挑戰。</li>
+                    <li><strong>FP-Growth 資料二元化：</strong> 增加前處理步驟。</li>
+                    <li><strong>結果詮釋複雜性：</strong> 需領域知識和仔細考量。</li>
+                    <li><strong>特定實作的性能：</strong> 相較專用函式庫可能非最優。</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-4 mb-2 text-sky-700">使用者最佳實踐：</h3>
+                <ol class="list-decimal list-inside ml-4 space-y-2">
+                    <li><strong>徹底的資料前處理：</strong> 妥善處理遺失值、轉換屬性類型。</li>
+                    <li><strong>明智的演算法選擇：</strong> Apriori (小資料集/CARs) vs FP-Growth (較大資料集/性能)。</li>
+                    <li><strong>細緻的參數調整：</strong> 實驗支持度、信賴度等閾值，理解 Weka 迭代尋找規則的過程。</li>
+                    <li><strong>批判性的規則評估：</strong> 利用多指標 (Lift, Leverage, Conviction) 輔助判斷，警惕高信賴度但低提升度的規則。</li>
+                    <li><strong>從小處著手：</strong> 先用小樣本理解演算法行為。</li>
+                </ol>
+                <p class="mt-3">Weka 是學習和研究關聯規則的絕佳工具。對於超大規模部署，可能需結合抽樣或探索更專業系統。</p>
+            </div>
+        </div>
+
+        <footer class="mt-12 text-center text-slate-500">
+            <p>&copy; <span id="currentYear"></span> Weka 關聯規則互動指南. 內容基於研究文件並強化互動性。</p>
+        </footer>
+    </div>
+
+    <script>
+        // Tab functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                button.classList.add('active');
+                const targetTab = button.getAttribute('data-tab');
+                document.getElementById('tab-' + targetTab).classList.add('active');
+                 // Re-render MathJax if the new tab contains it
+                if (typeof MathJax !== 'undefined' && typeof MathJax.typeset === 'function') {
+                    setTimeout(() => MathJax.typesetPromise(), 0);
+                }
+            });
+        });
+        
+        // Accordion functionality
+        const accordionButtons = document.querySelectorAll('.accordion-button');
+        accordionButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                event.stopPropagation(); 
+                const content = button.nextElementSibling;
+                button.classList.toggle('active');
+                if (content.style.maxHeight && parseFloat(content.style.maxHeight) > 0) {
+                    content.style.maxHeight = '0px';
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+                // Adjust parent accordions
+                let currentElement = button;
+                while (currentElement.parentElement) {
+                    const parentAccordionContent = currentElement.closest('.accordion-content');
+                    if (parentAccordionContent && parentAccordionContent.style.maxHeight && parseFloat(parentAccordionContent.style.maxHeight) > 0) {
+                        parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px";
+                    }
+                    if (parentAccordionContent) {
+                        const parentButton = parentAccordionContent.previousElementSibling;
+                        if (parentButton && parentButton.classList.contains('accordion-button')) {
+                            currentElement = parentButton; 
+                        } else { break; }
+                    } else { break; }
+                }
+            });
+        });
+        
+        if (tabButtons.length > 0) {
+            tabButtons[0].click();
+        }
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // --- Apriori Interactive Logic ---
+        const startAnalysisButton = document.getElementById('startAnalysisButton');
+        const transactionsInput = document.getElementById('transactionsInput');
+        const minSupportInput = document.getElementById('minSupportInput');
+        const minConfidenceInput = document.getElementById('minConfidenceInput');
+        const analysisOutput = document.getElementById('analysisOutput');
+
+        startAnalysisButton.addEventListener('click', () => {
+            runAprioriAnalysis();
+        });
+
+        function displayStep(title, content) {
+            const stepDiv = document.createElement('div');
+            stepDiv.classList.add('dynamic-step');
+            const titleEl = document.createElement('h4');
+            titleEl.classList.add('text-lg', 'font-semibold', 'text-sky-600', 'mb-2');
+            titleEl.textContent = title;
+            stepDiv.appendChild(titleEl);
+            
+            const contentEl = document.createElement('div');
+            if (typeof content === 'string') {
+                const p = document.createElement('p');
+                p.innerHTML = content; // Use innerHTML for potential HTML tags like <br>
+                contentEl.appendChild(p);
+            } else if (Array.isArray(content)) { // Assume array of itemsets or rules
+                if (content.length === 0) {
+                    const p = document.createElement('p');
+                    p.textContent = "無";
+                    contentEl.appendChild(p);
+                } else {
+                    const codeBlock = document.createElement('div');
+                    codeBlock.classList.add('code-block');
+                    codeBlock.innerHTML = content.map(item => {
+                        if (item.rule) { // For rules
+                            return `{${item.antecedent.join(', ')}} => {${item.consequent.join(', ')}} (支持度: ${item.support.toFixed(2)}, 信賴度: ${item.confidence.toFixed(2)})`;
+                        } else if (item.itemset) { // For itemsets with support
+                             return `{${item.itemset.join(', ')}}: ${item.count} (支持度: ${(item.support * 100).toFixed(1)}%)`;
+                        }
+                        return Array.isArray(item) ? `{${item.join(', ')}}` : item; // Default for simple itemsets
+                    }).join('<br>');
+                    contentEl.appendChild(codeBlock);
+                }
+            }
+            stepDiv.appendChild(contentEl);
+            analysisOutput.appendChild(stepDiv);
+        }
+        
+        function arrayToSet(arr) {
+            return new Set(arr.map(item => item.trim()).filter(item => item !== ''));
+        }
+
+        function runAprioriAnalysis() {
+            analysisOutput.innerHTML = '<p class="text-center text-sky-600 font-semibold">分析中...</p>'; // Clear previous and show loading
+
+            const rawTransactions = transactionsInput.value.trim().split('\n');
+            const transactions = rawTransactions.map(t => Array.from(arrayToSet(t.split(',')))).filter(t => t.length > 0);
+            
+            const minSupportPercent = parseFloat(minSupportInput.value) / 100;
+            const minConfidencePercent = parseFloat(minConfidenceInput.value) / 100;
+
+            if (transactions.length === 0) {
+                analysisOutput.innerHTML = '<p class="text-red-500">錯誤：請輸入有效的交易資料。</p>';
+                return;
+            }
+            if (isNaN(minSupportPercent) || minSupportPercent <= 0 || minSupportPercent > 1) {
+                analysisOutput.innerHTML = '<p class="text-red-500">錯誤：最小支持度必須介於 1 到 100 之間。</p>';
+                return;
+            }
+             if (isNaN(minConfidencePercent) || minConfidencePercent <= 0 || minConfidencePercent > 1) {
+                analysisOutput.innerHTML = '<p class="text-red-500">錯誤：最小信賴度必須介於 1 到 100 之間。</p>';
+                return;
+            }
+
+            const minSupportCount = Math.ceil(minSupportPercent * transactions.length);
+            analysisOutput.innerHTML = ''; // Clear loading message
+
+            displayStep("1. 輸入資料與參數", `交易數量: ${transactions.length}<br>最小支持度: ${minSupportPercent*100}% (計數: ${minSupportCount})<br>最小信賴度: ${minConfidencePercent*100}%`);
+
+            let allFrequentItemsets = [];
+            let k = 1;
+            let Lk_minus_1 = [];
+
+            // Step 1: Generate C1 and L1
+            const C1 = {};
+            transactions.forEach(transaction => {
+                transaction.forEach(item => {
+                    C1[item] = (C1[item] || 0) + 1;
+                });
+            });
+
+            const C1_display = Object.entries(C1).map(([item, count]) => ({ itemset: [item], count, support: count / transactions.length }));
+            displayStep(`2.${k} 計算候選 1-項目集 (C1) 及其支持度`, C1_display);
+
+            const L1 = Object.entries(C1)
+                .filter(([_, count]) => count >= minSupportCount)
+                .map(([item, count]) => ({ itemset: [item], count, support: count / transactions.length }));
+            
+            if (L1.length === 0) {
+                displayStep(`2.${k+1} 頻繁 1-項目集 (L1)`, "無頻繁 1-項目集。演算法終止。");
+                return;
+            }
+            displayStep(`2.${k+1} 頻繁 1-項目集 (L1)`, L1);
+            Lk_minus_1 = L1.map(item => item.itemset.sort());
+            allFrequentItemsets.push(...L1);
+            k++;
+
+            // Subsequent steps: Generate Ck and Lk
+            while (Lk_minus_1.length > 0) {
+                // Generate Ck
+                const Ck_candidates = generateCandidates(Lk_minus_1, k);
+                if (Ck_candidates.length === 0) {
+                    displayStep(`${k+1}.${k-1} 生成候選 ${k}-項目集 (C${k})`, "無法生成更多候選項目集。");
+                    break;
+                }
+                
+                // Prune Ck (Apriori property) - check subsets
+                const Ck_pruned = pruneCandidates(Ck_candidates, new Set(Lk_minus_1.map(s => s.join(','))), k);
+                 displayStep(`${k+1}.${k-1} 生成候選 ${k}-項目集 (C${k}) (組合與剪枝後)`, Ck_pruned.map(c => c.sort()));
+
+
+                // Calculate support for Ck_pruned
+                const Ck_with_support = Ck_pruned.map(candidate => {
+                    const count = transactions.filter(transaction => 
+                        candidate.every(item => transaction.includes(item))
+                    ).length;
+                    return { itemset: candidate.sort(), count, support: count / transactions.length };
+                });
+                displayStep(`${k+1}.${k} 計算 C${k} 支持度`, Ck_with_support);
+                
+                const Lk = Ck_with_support.filter(item => item.count >= minSupportCount);
+                if (Lk.length === 0) {
+                    displayStep(`${k+1}.${k+1} 頻繁 ${k}-項目集 (L${k})`, `無頻繁 ${k}-項目集。演算法終止。`);
+                    break;
+                }
+                displayStep(`${k+1}.${k+1} 頻繁 ${k}-項目集 (L${k})`, Lk);
+                
+                Lk_minus_1 = Lk.map(item => item.itemset.sort());
+                allFrequentItemsets.push(...Lk);
+                k++;
+            }
+
+            // Generate Association Rules
+            const rules = generateAssociationRules(allFrequentItemsets, transactions, minConfidencePercent);
+            displayStep("最終步驟：生成關聯規則 (滿足最小信賴度)", rules);
+        }
+
+        function generateCandidates(Lk_minus_1, k) { // Lk-1 is array of itemsets (arrays of strings)
+            const candidates = [];
+            for (let i = 0; i < Lk_minus_1.length; i++) {
+                for (let j = i + 1; j < Lk_minus_1.length; j++) {
+                    const itemset1 = Lk_minus_1[i];
+                    const itemset2 = Lk_minus_1[j];
+                    
+                    // Join step: Check if first k-2 items are the same
+                    let canJoin = true;
+                    if (k > 2) { // For k=2, L1 items are single, always join
+                        for (let l = 0; l < k - 2; l++) {
+                            if (itemset1[l] !== itemset2[l]) {
+                                canJoin = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (canJoin && (k === 2 || itemset1[k - 2] < itemset2[k - 2])) {
+                         const newCandidate = Array.from(new Set([...itemset1, ...itemset2])).sort();
+                         if (newCandidate.length === k) {
+                            candidates.push(newCandidate);
+                         }
+                    }
+                }
+            }
+            // Remove duplicates that might arise from different join orders if not careful
+            return Array.from(new Set(candidates.map(c => c.join(',')))).map(cs => cs.split(','));
+        }
+        
+        function pruneCandidates(Ck_candidates, Lk_minus_1_set_strings, k) {
+            if (k <= 2) return Ck_candidates; // No pruning needed for C2
+            return Ck_candidates.filter(candidate => {
+                for (let i = 0; i < candidate.length; i++) {
+                    const subset = [...candidate.slice(0, i), ...candidate.slice(i + 1)].sort();
+                    if (!Lk_minus_1_set_strings.has(subset.join(','))) {
+                        return false; // Prune if any (k-1)-subset is not frequent
+                    }
+                }
+                return true;
+            });
+        }
+
+        function generateAssociationRules(frequentItemsets, transactions, minConfidence) {
+            const rules = [];
+            // Filter for itemsets with at least 2 items, as rules need antecedent and consequent
+            const multiItemFreqSets = frequentItemsets.filter(fi => fi.itemset.length >= 2);
+
+            multiItemFreqSets.forEach(fi => {
+                const itemset = fi.itemset;
+                const supportFI = fi.count; // Use count for confidence calculation with counts
+
+                // Generate all non-empty proper subsets for antecedents
+                const allSubsets = getSubsets(itemset);
+                
+                allSubsets.forEach(antecedent => {
+                    if (antecedent.length > 0 && antecedent.length < itemset.length) {
+                        const consequent = itemset.filter(item => !antecedent.includes(item));
+                        if (consequent.length > 0) {
+                            // Find support count of antecedent
+                            const antecedentSupportObj = frequentItemsets.find(
+                                f => f.itemset.length === antecedent.length && 
+                                     antecedent.every(a_item => f.itemset.includes(a_item)) &&
+                                     f.itemset.every(f_item => antecedent.includes(f_item)) // Ensure exact match
+                            );
+                            
+                            if (antecedentSupportObj && antecedentSupportObj.count > 0) {
+                                const confidence = supportFI / antecedentSupportObj.count;
+                                if (confidence >= minConfidence) {
+                                    rules.push({
+                                        antecedent: antecedent.sort(),
+                                        consequent: consequent.sort(),
+                                        support: supportFI / transactions.length, // Overall support of X U Y
+                                        confidence: confidence
+                                    });
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+            return rules.sort((a,b) => b.confidence - a.confidence || b.support - a.support);
+        }
+
+        // Helper to get all non-empty proper subsets
+        function getSubsets(arr) {
+            const result = [];
+            const n = arr.length;
+            // Iterate from 1 to 2^n - 2 to get non-empty proper subsets
+            for (let i = 0; i < (1 << n); i++) { // Iterate all 2^n subsets
+                const subset = [];
+                for (let j = 0; j < n; j++) {
+                    if ((i >> j) & 1) {
+                        subset.push(arr[j]);
+                    }
+                }
+                // Add if non-empty (already handled by loop start/end if proper was strict)
+                // For rule generation, we need non-empty antecedents and consequents
+                // So, we allow all subsets here, and filter later.
+                if (subset.length > 0) result.push(subset.sort());
+            }
+            return result;
+        }
+
+    </script>
+</body>
+</html>
