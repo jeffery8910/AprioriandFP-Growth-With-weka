@@ -1,4 +1,5 @@
 # **Weka 關聯規則探勘互動指南 (增強互動版)**
+你可以在[這裡](https://jeffery8910.github.io/AprioriandFP-Growth-With-weka/)使用他們！
 
 ## **專案簡介**
 
